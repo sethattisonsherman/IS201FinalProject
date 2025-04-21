@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bumper Car Tag</title>
+    <style>
+        .header{
+            text-align: center;
+            background-color: whitesmoke;
+            color: black;
+            font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            height: 50px;
+            line-height: 50px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #arena {
+            position: relative;
+            width: 80vw;
+            height: 80vh;
+            background-image: url('assets/img/pixel\ art\ background\ of\ an\ arena\ from\ a\ top-down\ perspective\ with\ only\ the\ ground\ in\ sight.jpeg');
+            border: 5px solid #fff;
+            margin: auto;
+            top: 10vh;
+        }
+        .car {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-size: cover;
+            border: 2px solid #fff;
+            border-radius: 50%;
+        }
+        #player {
+            background-image: url('assets/img/a\ token-like\ pixel\ art\ of\ a\ wizard\ in\ a\ small\ car.jpeg');
+        }
+        .computer {
+            background-image: url('assets/img/a\ token-like\ pixel\ art\ of\ a\ vampire\ in\ a\ small\ car.jpeg');
+            animation: blink 1s infinite;
+        }
+        #pauseButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #2a2a2a;
+            font-size: 16px;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="scratch.html">Back to Scratch Page</a>
+    </div>
+    <div id="arena">
+        <button id="pauseButton">Pause</button>
+        <div id="timer">Time: 0</div>
+        <div class="car" id="player" style="left: 50%; top: 50%;"></div>
+    </div>
+    <script>
+        let arena = document.getElementById('arena');
+        let player = document.getElementById('player');
+        let pauseButton = document.getElementById('pauseButton');
+        let timerDisplay = document.getElementById('timer');
+        let isPaused = false;
+        let computers = [];
+        let strategies = ['chase', 'random', 'avoid'];
+        let playerSpeed = 5;
+        let computerSpeed = 2;
+        let keys = {};
+        let time = 0;
+
+        pauseButton.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+        });
+
+        function resetGame() {
+            computers.forEach(computer => computer.remove());
+            computers = [];
+            player.style.left = '50%';
+            player.style.top = '50%';
+            time = 0;
+            computerSpeed = 2;
+            timerDisplay.textContent = `Time: ${time}`;
+        }
+
+        function spawnComputer() {
+            if (isPaused) return;
+            let computer = document.createElement('div');
+            computer.className = 'car computer';
+            computer.style.left = Math.random() * (arena.clientWidth - 50) + 'px';
+            computer.style.top = Math.random() * (arena.clientHeight - 50) + 'px';
+            computer.strategy = strategies[Math.floor(Math.random() * strategies.length)];
+            computers.push(computer);
+            arena.appendChild(computer);
+            setTimeout(() => switchStrategy(computer), Math.random() * 5000 + 2000);
+        }
+
+        function switchStrategy(computer) {
+            if (isPaused) return;
+            computer.strategy = strategies[Math.floor(Math.random() * strategies.length)];
+            setTimeout(() => switchStrategy(computer), Math.random() * 5000 + 2000);
+        }
+
+        function moveComputers() {
+            if (isPaused) return;
+            computers.forEach(computer => {
+                let dx = player.offsetLeft - computer.offsetLeft;
+                let dy = player.offsetTop - computer.offsetTop;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                switch (computer.strategy) {
+                    case 'chase':
+                        computer.style.left = Math.min(Math.max(computer.offsetLeft + (dx / distance) * computerSpeed, 0), arena.clientWidth - 50) + 'px';
+                        computer.style.top = Math.min(Math.max(computer.offsetTop + (dy / distance) * computerSpeed, 0), arena.clientHeight - 50) + 'px';
+                        break;
+                    case 'random':
+                        computer.style.left = Math.min(Math.max(computer.offsetLeft + (Math.random() - 0.5) * computerSpeed * 2, 0), arena.clientWidth - 50) + 'px';
+                        computer.style.top = Math.min(Math.max(computer.offsetTop + (Math.random() - 0.5) * computerSpeed * 2, 0), arena.clientHeight - 50) + 'px';
+                        break;
+                    case 'avoid':
+                        computer.style.left = Math.min(Math.max(computer.offsetLeft - (dx / distance) * computerSpeed, 0), arena.clientWidth - 50) + 'px';
+                        computer.style.top = Math.min(Math.max(computer.offsetTop - (dy / distance) * computerSpeed, 0), arena.clientHeight - 50) + 'px';
+                        break;
+                }
+            });
+        }
+
+        function movePlayer() {
+            if (isPaused) return;
+            let dx = 0, dy = 0;
+            if (keys['ArrowUp'] || keys['w']) dy -= playerSpeed;
+            if (keys['ArrowDown'] || keys['s']) dy += playerSpeed;
+            if (keys['ArrowLeft'] || keys['a']) dx -= playerSpeed;
+            if (keys['ArrowRight'] || keys['d']) dx += playerSpeed;
+
+            player.style.left = Math.min(Math.max(player.offsetLeft + dx, 0), arena.clientWidth - 50) + 'px';
+            player.style.top = Math.min(Math.max(player.offsetTop + dy, 0), arena.clientHeight - 50) + 'px';
+        }
+
+        function detectCollision() {
+            computers.forEach(computer => {
+                let dx = player.offsetLeft - computer.offsetLeft;
+                let dy = player.offsetTop - computer.offsetTop;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 50) {
+                    alert('Game Over!');
+                    resetGame();
+                }
+            });
+        }
+
+        function updateTimer() {
+            if (isPaused) return;
+            time++;
+            timerDisplay.textContent = `Time: ${time}`;
+            if (time % 5 === 0) {
+                computerSpeed += 0.5;
+            }
+        }
+
+        document.addEventListener('keydown', (event) => keys[event.key] = true);
+        document.addEventListener('keyup', (event) => keys[event.key] = false);
+
+        setInterval(spawnComputer, 7000);
+        setInterval(moveComputers, 50);
+        setInterval(movePlayer, 50);
+        setInterval(detectCollision, 50);
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
